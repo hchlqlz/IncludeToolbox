@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.Shell;
+﻿using EnvDTE;
+using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -225,7 +226,7 @@ namespace IncludeToolbox.IncludeWhatYouUse
 
             string preprocessorDefintions;
             try
-            { 
+            {
                 preprocessorDefintions = VSUtils.VCUtils.GetCompilerSetting_PreprocessorDefinitions(project);
             }
             catch (VCQueryFailure e)
@@ -249,41 +250,8 @@ namespace IncludeToolbox.IncludeWhatYouUse
                 clangOptionList.Add("-w");
                 // ... despite of that "invalid token paste" comes through a lot. Disable it.
                 clangOptionList.Add("-Wno-invalid-token-paste");
-                // Assume C++14
-                clangOptionList.Add("-std=c++14");
                 // MSVC specific. See https://clang.llvm.org/docs/UsersManual.html#microsoft-extensions
                 clangOptionList.Add("-fms-compatibility -fms-extensions -fdelayed-template-parsing");
-                clangOptionList.Add($"-fmsc-version={VSUtils.GetMSCVerString()}");
-                // Architecture
-                try
-                {
-                    switch (VSUtils.VCUtils.GetLinkerSetting_TargetMachine(project))
-                    {
-                        // Most targets give an error of this form:
-                        // "error: unknown target CPU 'x86'"
-                        // It seems iwyu is only really fine with x86-64
-
-                        /*case VCProjectUtils.Base.TargetMachineType.X86:
-                            clangOptions.Add("-march=x86");
-                            break;*/
-                        case VCHelper.TargetMachineType.AMD64:
-                            clangOptionList.Add("-march=x86-64");
-                            break;
-                            /*case VCProjectUtils.Base.TargetMachineType.ARM:
-                                clangOptions.Add("-march=arm");
-                                break;
-                            case VCProjectUtils.Base.TargetMachineType.MIPS:
-                                clangOptions.Add(""-march=mips");
-                                break;
-                            case VCProjectUtils.Base.TargetMachineType.THUMB:
-                                clangOptions.Add(""-march=thumb");
-                                break;*/
-                    }
-                }
-                catch (VCQueryFailure e)
-                {
-                    await Output.Instance.ErrorMsg($"Failed to query for target machine: {e.Message}");
-                }
 
                 // icwyu options
                 var iwyuOptionList = new List<string>();

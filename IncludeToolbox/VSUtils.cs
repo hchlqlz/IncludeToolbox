@@ -8,6 +8,7 @@ using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.TextManager.Interop;
 using EnvDTE;
 using Microsoft.VisualStudio;
+using Microsoft.VisualStudio.Shell.Interop;
 
 namespace IncludeToolbox
 {
@@ -28,28 +29,6 @@ namespace IncludeToolbox
         // With VS2019, the older versions are no longer available and we're stuck with a single version for better or worse.
 
         public static VCHelper VCUtils = new VCHelper();
-        //{
-        //    get
-        //    {
-        //        if (vcUtils != null)
-        //            return vcUtils;
-        //        else
-        //            return InitVCHelper();
-        //    }
-        //}
-
-        //private static IVCHelper vcUtils;
-
-        //private static IVCHelper InitVCHelper()
-        //{
-        //    var dte = GetDTE();
-        //    if (dte.Version.StartsWith("14."))
-        //        vcUtils = new VCProjectUtils.VS14.VCHelper();
-        //    else if (dte.Version.StartsWith("15."))
-        //        vcUtils = new VCProjectUtils.VS15.VCHelper();
-
-        //    return vcUtils;
-        //}
 
         /// <summary>
         /// Returns what the C++ macro _MSC_VER should resolve to.
