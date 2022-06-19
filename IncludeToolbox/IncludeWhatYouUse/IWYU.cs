@@ -230,7 +230,7 @@ namespace IncludeToolbox.IncludeWhatYouUse
                 preprocessorDefintions = VSUtils.VCUtils.GetCompilerSetting_PreprocessorDefinitions(project);
             }
             catch (VCQueryFailure e)
-            { 
+            {
                 await Output.Instance.ErrorMsg("Can't run IWYU: {0}", e.Message);
                 return null;
             }
@@ -277,6 +277,11 @@ namespace IncludeToolbox.IncludeWhatYouUse
                 if (settings.TransitiveIncludesOnly)
                     iwyuOptionList.Add("--transitive_includes_only");
 
+                if (settings.HeaderPrefix != "" && Directory.Exists(settings.HeaderPrefix))
+                {
+                    //todo paired
+                }
+
                 // Set max line length so something large so we don't loose comment information.
                 // Documentation:
                 // --max_line_length: maximum line length for includes. Note that this only affects comments and alignment thereof,
@@ -289,12 +294,25 @@ namespace IncludeToolbox.IncludeWhatYouUse
                 var includes = string.Join(" ", VSUtils.GetProjectIncludeDirectories(project, false).Select(x => "-I \"" + x.Replace("\\", "\\\\") + "\""));
                 var defines = preprocessorDefintions.Length == 0 ? "" : string.Join(" ", preprocessorDefintions.Split(';').Select(x => "-D" + x));
                 var filename = "\"" + fullFileName.Replace("\\", "\\\\") + "\"";
+
+                var iwyuOptions = string.Join(" ", iwyuOptionList.Select(x => " -Xiwyu " + x));
+
+                var ext = Path.GetExtension(fullFileName);
+
+                if (ext == ".h" || ext == ".hpp")
+                {
+                    var tmp_cpp = Path.GetTempFileName();
+                    tmp_cpp = Path.ChangeExtension(tmp_cpp, ".cpp");
+                    File.WriteAllText(tmp_cpp, "#include \"" + fullFileName + "\"");
+                    iwyuOptions += " -Xiwyu --check_also=" + filename;
+                    filename = "\"" + tmp_cpp.Replace("\\", "\\\\") + "\"";
+                }
+
                 var supportFilePath = Path.GetTempFileName();
                 File.WriteAllText(supportFilePath, includes + " " + defines + " " + filename);
 
                 var clangOptions = string.Join(" ", clangOptionList);
                 // each include-what-you-use parameter has an -Xiwyu prefix
-                var iwyuOptions = string.Join(" ", iwyuOptionList.Select(x => " -Xiwyu " + x));
                 process.StartInfo.Arguments = $"{clangOptions} {iwyuOptions} {settings.AdditionalParameters} \"@{supportFilePath}\"";
 
                 Output.Instance.Write("Running command '{0}' with following arguments:\n{1}\n\n", process.StartInfo.FileName, process.StartInfo.Arguments);

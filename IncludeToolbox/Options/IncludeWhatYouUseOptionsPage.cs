@@ -87,6 +87,13 @@ namespace IncludeToolbox
         [Description("This string is inserted after all other parameters and before the filename of the file iwyu is running on.")]
         public string AdditionalParameters { get; set; } = "";
 
+
+        [Category("iwyu options")]
+        [DisplayName("Header file prefix")]
+        [Description("Specify Header file prefix folder. Used to find pair header eg. a.cpp has an include/proj/a.h path to it, so the value should be include/proj")]
+
+        public string HeaderPrefix { get; set; } = "";
+
         #endregion
 
         #region postprocessing
@@ -125,6 +132,7 @@ namespace IncludeToolbox
             settingsStore.SetInt32(collectionName, nameof(PrefixHeaderIncludes), (int)PrefixHeaderIncludes);
             settingsStore.SetBoolean(collectionName, nameof(TransitiveIncludesOnly), TransitiveIncludesOnly);
             settingsStore.SetString(collectionName, nameof(AdditionalParameters), AdditionalParameters);
+            settingsStore.SetString(collectionName, nameof(HeaderPrefix), HeaderPrefix);
 
             settingsStore.SetBoolean(collectionName, nameof(ApplyProposal), ApplyProposal);
             settingsStore.SetBoolean(collectionName, nameof(RunIncludeFormatter), RunIncludeFormatter);
@@ -159,6 +167,8 @@ namespace IncludeToolbox
                 TransitiveIncludesOnly = settingsStore.GetBoolean(collectionName, nameof(TransitiveIncludesOnly));
             if (settingsStore.PropertyExists(collectionName, nameof(AdditionalParameters)))
                 AdditionalParameters = settingsStore.GetString(collectionName, nameof(AdditionalParameters));
+            if (settingsStore.PropertyExists(collectionName, nameof(HeaderPrefix)))
+                HeaderPrefix = settingsStore.GetString(collectionName, nameof(HeaderPrefix));
 
             if (settingsStore.PropertyExists(collectionName, nameof(ApplyProposal)))
                 ApplyProposal = settingsStore.GetBoolean(collectionName, nameof(ApplyProposal));
