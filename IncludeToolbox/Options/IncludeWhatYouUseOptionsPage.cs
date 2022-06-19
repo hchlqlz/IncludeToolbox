@@ -90,8 +90,7 @@ namespace IncludeToolbox
 
         [Category("iwyu options")]
         [DisplayName("Header file prefix")]
-        [Description("Specify Header file prefix folder. Used to find pair header eg. a.cpp has an include/proj/a.h path to it, so the value should be include/proj")]
-
+        [Description("Specify Header file prefix folder. Used to find pair header eg. a.cpp has an include/proj/a.h path to it, so the value should be ./include/proj. Works only relative to file.")]
         public string HeaderPrefix { get; set; } = "";
 
         #endregion

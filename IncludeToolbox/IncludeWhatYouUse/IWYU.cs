@@ -277,10 +277,7 @@ namespace IncludeToolbox.IncludeWhatYouUse
                 if (settings.TransitiveIncludesOnly)
                     iwyuOptionList.Add("--transitive_includes_only");
 
-                if (settings.HeaderPrefix != "" && Directory.Exists(settings.HeaderPrefix))
-                {
-                    //todo paired
-                }
+                
 
                 // Set max line length so something large so we don't loose comment information.
                 // Documentation:
@@ -299,6 +296,8 @@ namespace IncludeToolbox.IncludeWhatYouUse
 
                 var ext = Path.GetExtension(fullFileName);
 
+                
+
                 if (ext == ".h" || ext == ".hpp")
                 {
                     var tmp_cpp = Path.GetTempFileName();
@@ -306,6 +305,15 @@ namespace IncludeToolbox.IncludeWhatYouUse
                     File.WriteAllText(tmp_cpp, "#include \"" + fullFileName + "\"");
                     iwyuOptions += " -Xiwyu --check_also=" + filename;
                     filename = "\"" + tmp_cpp.Replace("\\", "\\\\") + "\"";
+                }
+                else if (settings.HeaderPrefix != "" && Directory.Exists(Path.GetDirectoryName(fullFileName) + settings.HeaderPrefix))
+                {
+                    var correspond_h = settings.HeaderPrefix + '\\' + Path.GetFileNameWithoutExtension(fullFileName) + ".h";
+                    var correspond_hpp = Path.ChangeExtension(correspond_h, ".hpp");
+                    if (!File.Exists(correspond_h))
+                        iwyuOptions += " -Xiwyu --check_also=" + "\"" + correspond_h.Replace("\\", "\\\\") + "\"";
+                    else if (!File.Exists(correspond_hpp))
+                        iwyuOptions += " -Xiwyu --check_also=" + "\"" + correspond_hpp.Replace("\\", "\\\\") + "\"";
                 }
 
                 var supportFilePath = Path.GetTempFileName();
