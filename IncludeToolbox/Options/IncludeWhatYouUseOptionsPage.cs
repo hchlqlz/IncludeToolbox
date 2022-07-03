@@ -59,7 +59,13 @@ namespace IncludeToolbox
         [Category("iwyu options")]
         [DisplayName("No Default Mappings")]
         [Description("Do not add iwyu's default mappings. (--no_default_mappings)")]
-        public bool NoDefaultMappings { get; set; } = false;
+        public bool NoDefaultMappings { get; set; } = false; 
+        
+        [Category("iwyu options")]
+        [DisplayName("No Default Mappings")]
+        [Description("Do not add iwyu's default mappings. (--no_default_mappings)")]
+        [TypeConverter(typeof(EnumConverter))]
+        public Commentaries Commentary { get; set; } = Commentaries.Default;
 
         [Category("iwyu options")]
         [DisplayName("PCH in Code")]
@@ -175,4 +181,12 @@ namespace IncludeToolbox
                 RunIncludeFormatter = settingsStore.GetBoolean(collectionName, nameof(RunIncludeFormatter));
         }
     }
+
+    public enum Commentaries
+    {
+        Default,
+        Always,
+        Never
+    }
+
 }

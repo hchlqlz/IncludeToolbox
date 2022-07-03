@@ -296,7 +296,15 @@ namespace IncludeToolbox.IncludeWhatYouUse
 
                 var ext = Path.GetExtension(fullFileName);
 
-                
+                string co = "";
+                switch (settings.Commentary)
+                {
+                    case Commentaries.Always: co = (" -Xiwyu --update_comments"); break;
+                    case Commentaries.Never: co = (" -Xiwyu --no_comments"); break;
+                    case Commentaries.Default: break;
+                }
+
+                iwyuOptions += co;
 
                 if (ext == ".h" || ext == ".hpp")
                 {
