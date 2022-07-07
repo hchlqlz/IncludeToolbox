@@ -62,8 +62,8 @@ namespace IncludeToolbox
         public bool NoDefaultMappings { get; set; } = false; 
         
         [Category("iwyu options")]
-        [DisplayName("No Default Mappings")]
-        [Description("Do not add iwyu's default mappings. (--no_default_mappings)")]
+        [DisplayName("Commentaries")]
+        [Description("Change the output mode of the commentaries from IWYU.")]
         [TypeConverter(typeof(EnumConverter))]
         public Commentaries Commentary { get; set; } = Commentaries.Default;
 
