@@ -1,4 +1,5 @@
-﻿using Microsoft.VisualStudio.Shell;
+﻿using EnvDTE;
+using Microsoft.VisualStudio.Shell;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -225,11 +226,11 @@ namespace IncludeToolbox.IncludeWhatYouUse
 
             string preprocessorDefintions;
             try
-            { 
+            {
                 preprocessorDefintions = VSUtils.VCUtils.GetCompilerSetting_PreprocessorDefinitions(project);
             }
             catch (VCQueryFailure e)
-            { 
+            {
                 await Output.Instance.ErrorMsg("Can't run IWYU: {0}", e.Message);
                 return null;
             }
@@ -249,41 +250,8 @@ namespace IncludeToolbox.IncludeWhatYouUse
                 clangOptionList.Add("-w");
                 // ... despite of that "invalid token paste" comes through a lot. Disable it.
                 clangOptionList.Add("-Wno-invalid-token-paste");
-                // Assume C++14
-                clangOptionList.Add("-std=c++14");
                 // MSVC specific. See https://clang.llvm.org/docs/UsersManual.html#microsoft-extensions
                 clangOptionList.Add("-fms-compatibility -fms-extensions -fdelayed-template-parsing");
-                clangOptionList.Add($"-fmsc-version={VSUtils.GetMSCVerString()}");
-                // Architecture
-                try
-                {
-                    switch (VSUtils.VCUtils.GetLinkerSetting_TargetMachine(project))
-                    {
-                        // Most targets give an error of this form:
-                        // "error: unknown target CPU 'x86'"
-                        // It seems iwyu is only really fine with x86-64
-
-                        /*case VCProjectUtils.Base.TargetMachineType.X86:
-                            clangOptions.Add("-march=x86");
-                            break;*/
-                        case VCHelper.TargetMachineType.AMD64:
-                            clangOptionList.Add("-march=x86-64");
-                            break;
-                            /*case VCProjectUtils.Base.TargetMachineType.ARM:
-                                clangOptions.Add("-march=arm");
-                                break;
-                            case VCProjectUtils.Base.TargetMachineType.MIPS:
-                                clangOptions.Add(""-march=mips");
-                                break;
-                            case VCProjectUtils.Base.TargetMachineType.THUMB:
-                                clangOptions.Add(""-march=thumb");
-                                break;*/
-                    }
-                }
-                catch (VCQueryFailure e)
-                {
-                    await Output.Instance.ErrorMsg($"Failed to query for target machine: {e.Message}");
-                }
 
                 // icwyu options
                 var iwyuOptionList = new List<string>();
@@ -309,6 +277,8 @@ namespace IncludeToolbox.IncludeWhatYouUse
                 if (settings.TransitiveIncludesOnly)
                     iwyuOptionList.Add("--transitive_includes_only");
 
+                
+
                 // Set max line length so something large so we don't loose comment information.
                 // Documentation:
                 // --max_line_length: maximum line length for includes. Note that this only affects comments and alignment thereof,
@@ -321,12 +291,44 @@ namespace IncludeToolbox.IncludeWhatYouUse
                 var includes = string.Join(" ", VSUtils.GetProjectIncludeDirectories(project, false).Select(x => "-I \"" + x.Replace("\\", "\\\\") + "\""));
                 var defines = preprocessorDefintions.Length == 0 ? "" : string.Join(" ", preprocessorDefintions.Split(';').Select(x => "-D" + x));
                 var filename = "\"" + fullFileName.Replace("\\", "\\\\") + "\"";
+
+                var iwyuOptions = string.Join(" ", iwyuOptionList.Select(x => " -Xiwyu " + x));
+
+                var ext = Path.GetExtension(fullFileName);
+
+                string co = "";
+                switch (settings.Commentary)
+                {
+                    case Commentaries.Always: co = (" -Xiwyu --update_comments"); break;
+                    case Commentaries.Never: co = (" -Xiwyu --no_comments"); break;
+                    case Commentaries.Default: break;
+                }
+
+                iwyuOptions += co;
+
+                if (ext == ".h" || ext == ".hpp")
+                {
+                    var tmp_cpp = Path.GetTempFileName();
+                    tmp_cpp = Path.ChangeExtension(tmp_cpp, ".cpp");
+                    File.WriteAllText(tmp_cpp, "#include \"" + fullFileName + "\"");
+                    iwyuOptions += " -Xiwyu --check_also=" + filename;
+                    filename = "\"" + tmp_cpp.Replace("\\", "\\\\") + "\"";
+                }
+                else if (settings.HeaderPrefix != "" && Directory.Exists(Path.GetDirectoryName(fullFileName) + settings.HeaderPrefix))
+                {
+                    var correspond_h = settings.HeaderPrefix + '\\' + Path.GetFileNameWithoutExtension(fullFileName) + ".h";
+                    var correspond_hpp = Path.ChangeExtension(correspond_h, ".hpp");
+                    if (!File.Exists(correspond_h))
+                        iwyuOptions += " -Xiwyu --check_also=" + "\"" + correspond_h.Replace("\\", "\\\\") + "\"";
+                    else if (!File.Exists(correspond_hpp))
+                        iwyuOptions += " -Xiwyu --check_also=" + "\"" + correspond_hpp.Replace("\\", "\\\\") + "\"";
+                }
+
                 var supportFilePath = Path.GetTempFileName();
                 File.WriteAllText(supportFilePath, includes + " " + defines + " " + filename);
 
                 var clangOptions = string.Join(" ", clangOptionList);
                 // each include-what-you-use parameter has an -Xiwyu prefix
-                var iwyuOptions = string.Join(" ", iwyuOptionList.Select(x => " -Xiwyu " + x));
                 process.StartInfo.Arguments = $"{clangOptions} {iwyuOptions} {settings.AdditionalParameters} \"@{supportFilePath}\"";
 
                 Output.Instance.Write("Running command '{0}' with following arguments:\n{1}\n\n", process.StartInfo.FileName, process.StartInfo.Arguments);

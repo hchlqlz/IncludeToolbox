@@ -56,7 +56,7 @@ namespace IncludeToolbox
 
             VCConfiguration activeConfiguration = vcProject.ActiveConfiguration;
             VCTool compilerTool = null;
-            foreach (var tool in activeConfiguration.Tools)
+            foreach (var tool in (IVCCollection)activeConfiguration.Tools)
             {
                 compilerTool = tool as VCTool;
                 if (compilerTool != null)
@@ -78,7 +78,7 @@ namespace IncludeToolbox
             VCConfiguration activeConfiguration = vcProject.ActiveConfiguration;
             var tools = activeConfiguration.Tools;
             VCLinkerTool linkerTool = null;
-            foreach (var tool in activeConfiguration.Tools)
+            foreach (var tool in (IVCCollection)activeConfiguration.Tools)
             {
                 linkerTool = tool as VCLinkerTool;
                 if (linkerTool != null)
@@ -168,7 +168,7 @@ namespace IncludeToolbox
             {
                 VCCLCompilerTool compilerTool = GetToolFromActiveConfiguration<VCCLCompilerTool>(project);
                 if (compilerTool != null)
-                    return compilerTool?.PreprocessorDefinitions;
+                    return compilerTool.PreprocessorDefinitions.Replace("\\\"$(INHERIT)\\\";", "");
                 else
                     queryFailure = new VCQueryFailure("Unhandled error");
             }
